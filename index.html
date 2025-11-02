@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IdealBot — Ideal College Chat</title>
+<style>
+body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f6f7fb;font-family:system-ui}
+.container{width:420px;background:white;border-radius:12px;box-shadow:0 6px 24px rgba(10,10,20,0.08);padding:18px}
+h1{margin:0 0 12px 0;font-size:20px}
+.chat-box{height:420px;overflow:auto;border:1px solid #eee;padding:10px;border-radius:8px;background:#fbfdff}
+.message{padding:8px 10px;margin:8px 0;border-radius:10px;max-width:80%}
+.user{margin-left:auto;background:#dbeafe}
+.bot{margin-right:auto;background:#e6ffed}
+.input-row{display:flex;gap:8px;margin-top:12px}
+input{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd}
+button{padding:10px 12px;border-radius:8px;border:none;background:#2563eb;color:white;cursor:pointer}
+</style>
+</head>
+<body>
+<main class="container">
+<h1>🤖 IdealBot</h1>
+<div id="chat-box" class="chat-box"></div>
+<div class="input-row">
+<input id="user-input" placeholder="Type in Bangla or English..." autocomplete="off"/>
+<button id="send-btn">Send</button>
+</div>
+</main>
+<script>
+const chatBox = document.getElementById('chat-box');
+const input = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+
+function addMessage(text, cls){
+    const d = document.createElement('div');
+    d.className = 'message ' + cls;
+    d.textContent = text;
+    chatBox.appendChild(d);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage(){
+    const msg = input.value.trim();
+    if(!msg) return;
+    addMessage(msg, 'user');
+    input.value = '';
+    addMessage('Typing...', 'bot');
+
+    try{
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        // remove 'Typing...' message
+        const bots = Array.from(chatBox.querySelectorAll('.bot'));
+        if(bots.length) bots[bots.length-1].remove();
+        addMessage(data.reply || 'No response', 'bot');
+    }catch(err){
+        console.error(err);
+        addMessage('Error: '+(err.message||err), 'bot');
+    }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+</script>
+</body>
+</html>
